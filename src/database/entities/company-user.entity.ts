@@ -1,0 +1,15 @@
+import { Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { TemplateEntity } from './template.entity';
+import { CompanyEntity } from './company.entity';
+import { UserEntity } from './user.entity';
+
+@Entity({ name: 'company_user' })
+export class CompanyUserEntity extends TemplateEntity {
+  @ManyToOne(() => CompanyEntity, (company) => company.company_user)
+  @JoinColumn({ name: 'company_uuid' })
+  company_uuid: string;
+
+  @ManyToOne(() => UserEntity, (user) => user.companyUser)
+  @JoinColumn({ name: 'user_uuid' })
+  user_uuid: string;
+}

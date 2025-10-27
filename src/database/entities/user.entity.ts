@@ -1,6 +1,8 @@
-import { Column, Entity } from 'typeorm';
+import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { TemplateEntity } from './template.entity';
-import { EStatus } from '../../enum/base';
+import { EStatus } from '../../enum/user';
+import { UserProvider } from './userProvider.entity';
+import { CompanyUserEntity } from './company-user.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity extends TemplateEntity {
@@ -11,6 +13,7 @@ export class UserEntity extends TemplateEntity {
   email: string;
 
   @Column({ type: 'varchar', nullable: true })
+  @Index('users_emailHash_idx')
   emailHash: string;
 
   @Column({ type: 'varchar', nullable: true })
@@ -21,4 +24,10 @@ export class UserEntity extends TemplateEntity {
 
   @Column({ type: 'enum', enum: EStatus, default: EStatus.ACTIVE })
   status: EStatus;
+
+  @OneToMany(() => UserProvider, (provider) => provider.user_uuid)
+  providers: UserProvider[];
+
+  @OneToMany(() => CompanyUserEntity, (companyUser) => companyUser.user_uuid)
+  companyUser: CompanyUserEntity[];
 }
