@@ -55,7 +55,7 @@ export class UserController {
       const jwt = await this.credentialService.signJwt(user);
       this.logger.log(`login completed`, this.login.name, {
         username: body.email,
-        company: user.company_uuid,
+        company: user.company,
       });
       res.status(httpStatus.OK);
       res.json({ success: true, data: jwt.data });
