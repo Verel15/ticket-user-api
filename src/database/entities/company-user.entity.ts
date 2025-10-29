@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { TemplateEntity } from './template.entity';
 import { CompanyEntity } from './company.entity';
 import { UserEntity } from './user.entity';
@@ -10,6 +10,7 @@ export class CompanyUserEntity extends TemplateEntity {
   status: EStatus;
 
   @ManyToOne(() => CompanyEntity, (company) => company.company_user)
+  @Index(`company_user_company_idx`)
   @JoinColumn({ name: 'company_uuid' })
   company_uuid: string;
 

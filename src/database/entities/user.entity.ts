@@ -1,6 +1,6 @@
 import { Column, Entity, Index, OneToMany } from 'typeorm';
 import { TemplateEntity } from './template.entity';
-import { EStatus } from '../../enum/user';
+import { EStatus } from '../../enum/common';
 import { UserProvider } from './userProvider.entity';
 import { CompanyUserEntity } from './company-user.entity';
 import { UserGroupEntity } from './user-group.entity';
@@ -29,9 +29,13 @@ export class UserEntity extends TemplateEntity {
   @OneToMany(() => UserProvider, (provider) => provider.user_uuid)
   providers: UserProvider[];
 
-  @OneToMany(() => CompanyUserEntity, (companyUser) => companyUser.user_uuid)
+  @OneToMany(() => CompanyUserEntity, (companyUser) => companyUser.user_uuid, {
+    onDelete: 'CASCADE',
+  })
   companyUser: CompanyUserEntity[];
 
-  @OneToMany(() => UserGroupEntity, (usergroup) => usergroup.user_uuid)
+  @OneToMany(() => UserGroupEntity, (usergroup) => usergroup.user_uuid, {
+    onDelete: 'CASCADE',
+  })
   groupUser: UserGroupEntity[];
 }

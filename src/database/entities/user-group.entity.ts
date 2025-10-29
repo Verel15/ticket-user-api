@@ -2,12 +2,16 @@ import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { TemplateEntity } from './template.entity';
 import { UserEntity } from './user.entity';
 import { GroupEntity } from './group.entity';
-import { EStatusProcess } from '../../enum/group';
+import { EStatus } from '../../enum/common';
 
 @Entity({ name: `user_group` })
 export class UserGroupEntity extends TemplateEntity {
-  @Column({ type: 'enum', enum: EStatusProcess })
-  status: EStatusProcess;
+  @Column({
+    type: 'enum',
+    enum: EStatus,
+    default: EStatus.ACTIVE,
+  })
+  status: EStatus;
 
   @ManyToOne(() => UserEntity, (user) => user.groupUser)
   @JoinColumn({ name: 'user_uuid' })

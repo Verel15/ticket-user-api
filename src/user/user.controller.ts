@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { UserService } from './user.service';
 import { SaveAppLog } from '../utils/logger';
 import httpStatus from 'http-status';
@@ -86,7 +94,29 @@ export class UserController {
     } catch (error) {
       this.logger.error(error.message, error.stack, this.inviteUser.name, body);
       res.status(httpStatus.INTERNAL_SERVER_ERROR);
-      res.json({ success: false, message: `Fail to invite user.` });
+      res.json({ success: false, message: error.message });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/invite')
+  async getInvite(
+    @CurrentUser() user: ICurrentUser,
+    @Query('page') page: number,
+    @Query('limit') limit: number,
+    @Res() res: Response,
+  ) {
+    try {
+      const result = await this.userService.listInvite(page, limit, user);
+      res.status(httpStatus.OK);
+      res.json({
+        success: true,
+        message: `Invite user in company`,
+        data: { rowCount: result.count, data: result.data },
+      });
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.getInvite.name);
+      res.status(httpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }
