@@ -21,6 +21,7 @@ import { SaveAppLog } from '../utils/logger';
 import { CreateGroupDto } from './dto/createGroup.dto';
 import { GroupService } from './group.service';
 import httpStatus from 'http-status';
+import { AddUserGroupDto } from './dto/addUserGroup.dto';
 
 @ApiTags('Group')
 @ApiBearerAuth()
@@ -114,6 +115,23 @@ export class GroupController {
       this.logger.error(error.message, error.stack, this.deleteGroup.name);
       res.status(httpStatus.INTERNAL_SERVER_ERROR);
       res.json({ success: false, message: `Fail to delete group` });
+    }
+  }
+
+  @Post('/:id/add-user')
+  async addUser(
+    @CurrentUser() user: ICurrentUser,
+    @Param('id') uuid: string,
+    @Body() body: AddUserGroupDto,
+    @Res() res: Response,
+  ) {
+    try {
+      await this.groupService.addUser(uuid, body.users, user);
+      res.json({ success: true, message: `Add user to group completed` });
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.addUser.name);
+      res.status(httpStatus.BAD_REQUEST);
+      res.json({ success: false, message: error.message });
     }
   }
 }

@@ -5,7 +5,11 @@ import { Repository } from 'typeorm';
 import { SaveAppLog } from '../utils/logger';
 import { CreateGroupDto } from './dto/createGroup.dto';
 import { EStatus } from '../enum/common';
+import { EStatusProcess } from '../enum/group';
 import { ICurrentUser } from '../current-user/current-user.decorator';
+import { UserGroupEntity } from '../database/entities/user-group.entity';
+import { UserEntity } from '../database/entities/user.entity';
+import { CompanyUserEntity } from '../database/entities/company-user.entity';
 
 @Injectable()
 export class GroupService {
@@ -14,6 +18,12 @@ export class GroupService {
   constructor(
     @InjectRepository(GroupEntity)
     private readonly groupRepository: Repository<GroupEntity>,
+
+    @InjectRepository(UserGroupEntity)
+    private readonly userGroupRepository: Repository<UserGroupEntity>,
+
+    @InjectRepository(UserEntity)
+    private readonly userRepository: Repository<UserEntity>,
   ) {}
 
   async createGroup(body: CreateGroupDto, company: string, userId: string) {
@@ -83,11 +93,11 @@ export class GroupService {
 
       Object.assign(update, { ...body, updatedBy: user.uuid });
       await this.groupRepository
-        .createQueryBuilder(`g`)
+        .createQueryBuilder()
         .update()
         .set(update)
-        .where(`g.uuid = :uuid`, { uuid })
-        .andWhere(`g.company = :company`, { company: user.company })
+        .where(`uuid = :uuid`, { uuid })
+        .andWhere(`company_uuid = :company`, { company: user.company })
         .execute();
 
       this.logger.log(`update group completed`, this.updateGroup.name, {
@@ -104,14 +114,15 @@ export class GroupService {
   async deleteGroup(uuid: string, user: ICurrentUser) {
     try {
       await this.groupRepository
-        .createQueryBuilder(`g`)
+        .createQueryBuilder()
         .update()
         .set({
           status: EStatus.ARCHIVED,
           archivedBy: user.uuid,
+          archivedAt: new Date(),
         })
-        .where(`g.uuid = :uuid`, { uuid })
-        .andWhere(`g.company_uuid = :company`, { company: user.company })
+        .where(`uuid = :uuid`, { uuid })
+        .andWhere(`company_uuid = :company`, { company: user.company })
         .execute();
       this.logger.log(`delete group completed`, this.deleteGroup.name, {
         uuid,
@@ -124,6 +135,65 @@ export class GroupService {
         company: user.company,
       });
       throw new Error(error);
+    }
+  }
+
+  async addUser(uuid: string, userId: string[], userInfo: ICurrentUser) {
+    try {
+      const noActiveUser = await this.userRepository
+        .createQueryBuilder(`u`)
+        .where(`u.uuid IN(:...id)`, { id: userId })
+        .andWhere(`u.status != :status`, { status: EStatus.ACTIVE })
+        .getOne();
+
+      if (noActiveUser) {
+        throw new Error(`Some user not active`);
+      }
+
+      const checkExistPermission = await this.userRepository
+        .createQueryBuilder(`u`)
+        .innerJoin(CompanyUserEntity, `cu`, `u.uuid = cu.user_uuid`)
+        .innerJoin(GroupEntity, `g`, `g.company_uuid = cu.company_uuid`)
+        .where(`g.uuid = :uuid`, { uuid })
+        .andWhere(`cu.company_uuid = :company`, { company: userInfo.company })
+        .andWhere(`cu.status = :status`, { status: EStatus.ACTIVE })
+        .getCount();
+
+      if (checkExistPermission === 0) {
+        throw new Error(`Invalid user invite company group`);
+      }
+
+      const aleadyInGroup = await this.userGroupRepository
+        .createQueryBuilder(`ug`)
+        .where(`ug.user_uuid IN(:...id)`, { id: userId })
+        .andWhere(`ug.status = :status`, { status: EStatusProcess.ACTIVE })
+        .andWhere(`ug.group_uuid = :group`, { group: uuid })
+        .getCount();
+
+      if (aleadyInGroup !== 0) {
+        throw new Error(`Some user already in company group`);
+      }
+
+      const inserts: any = [];
+      for (const item of userId) {
+        inserts.push({
+          status: EStatusProcess.ACTIVE,
+          user_uuid: item,
+          group_uuid: uuid,
+          createdBy: userInfo.uuid,
+        });
+      }
+
+      await this.userGroupRepository
+        .createQueryBuilder()
+        .insert()
+        .into(UserGroupEntity)
+        .values(inserts)
+        .execute();
+
+      this.logger.log(`invite user completed`, this.addUser.name);
+    } catch (error) {
+      throw new Error(error.message);
     }
   }
 }

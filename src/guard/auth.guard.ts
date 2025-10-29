@@ -31,7 +31,7 @@ export class AuthGuard implements CanActivate {
       const response = await instance.get(`/api/v1/credential/verify`);
       request.user = response.data.data;
       return true;
-    } catch (error: any) {
+    } catch (error) {
       this.logger.error(error.message, error.stack, this.canActivate.name);
       return false;
     }

@@ -65,7 +65,7 @@ export class CompanyService {
   async update(body: CreateCompanyDto, uuid: string, userId: string) {
     try {
       await this.companyRepoSitory
-        .createQueryBuilder(`c`)
+        .createQueryBuilder()
         .update()
         .set({
           name: body.name,
@@ -79,7 +79,7 @@ export class CompanyService {
           description: body.description,
           updatedBy: userId,
         })
-        .where(`c.uuid = :uuid`, { uuid })
+        .where(`uuid = :uuid`, { uuid })
         .execute();
       this.logger.log(`update company completed`, this.create.name, {
         name: body.name,
@@ -104,9 +104,9 @@ export class CompanyService {
       }
 
       await this.companyRepoSitory
-        .createQueryBuilder(`c`)
+        .createQueryBuilder()
         .update()
-        .where(`c.uuid = :uuid`, { uuid })
+        .where(`uuid = :uuid`, { uuid })
         .set({ status: EStatus.ARCHIVED, archivedAt: new Date() })
         .execute();
 

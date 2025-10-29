@@ -12,6 +12,7 @@ async function bootstrap() {
     logger: new SaveAppLog(AppModule.name),
   });
 
+  process.env.TZ = 'Asia/Bangkok';
   app.setGlobalPrefix('/api/v1');
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
