@@ -1,0 +1,19 @@
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { TemplateEntity } from './template.entity';
+import { UserEntity } from './user.entity';
+import { GroupEntity } from './group.entity';
+import { EStatusProcess } from '../../enum/group';
+
+@Entity({ name: `user_group` })
+export class UserGroupEntity extends TemplateEntity {
+  @Column({ type: 'enum', enum: EStatusProcess })
+  status: EStatusProcess;
+
+  @ManyToOne(() => UserEntity, (user) => user.groupUser)
+  @JoinColumn({ name: 'user_uuid' })
+  user_uuid: string;
+
+  @ManyToOne(() => GroupEntity, (group) => group.groupUser)
+  @JoinColumn({ name: 'group_uuid' })
+  group_uuid: string;
+}

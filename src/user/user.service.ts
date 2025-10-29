@@ -9,8 +9,12 @@ import { ConfigService } from '@nestjs/config';
 import { enc } from 'crypto-js';
 import sha1 from 'crypto-js/sha1';
 import { EStatus } from '../enum/user';
+import { EStatus as commonStatus } from '../enum/common';
 import { LoginDto } from './dto/login.dto';
 import { CompanyUserEntity } from '../database/entities/company-user.entity';
+import { InviteDto } from './dto/invite.dto';
+import { ICurrentUser } from '../current-user/current-user.decorator';
+import { UserGroupEntity } from '../database/entities/user-group.entity';
 
 @Injectable()
 export class UserService {
@@ -23,6 +27,9 @@ export class UserService {
 
     @InjectRepository(CompanyUserEntity)
     private readonly companyUserRepository: Repository<CompanyUserEntity>,
+
+    @InjectRepository(UserGroupEntity)
+    private readonly userGroupRepository: Repository<UserGroupEntity>,
   ) {}
 
   async register(body: RegisterDto) {
@@ -101,6 +108,60 @@ export class UserService {
       return userObj;
     } catch (error) {
       this.logger.error(error.message, error.stack, this.login.name);
+    }
+  }
+
+  async inviteUser(body: InviteDto, userInfo: ICurrentUser) {
+    try {
+      const user = await this.userGroupRepository
+        .createQueryBuilder(`u`)
+        .innerJoin(CompanyUserEntity, `cu`, `cu.user_uuid = u.uuid`)
+        .where(`u."emailHash" = :email`, {
+          email: sha1(body.email).toString(enc.Hex),
+        })
+        .andWhere(`cu.company_uuid = :company`, { company: userInfo.company })
+        .andWhere(`cu.status = :status`, { status: commonStatus.ACTIVE })
+        .select([
+          `cu.company_uuid AS company_uuid`,
+          `cu.user_uuid AS user_uuid`,
+        ])
+        .getRawOne();
+
+      if (user) {
+        throw new Error(`User already exist in company`);
+      }
+
+      const newUser = await this.userRepository
+        .createQueryBuilder()
+        .insert()
+        .into(UserEntity)
+        .values([
+          {
+            email: () =>
+              `pgp_sym_encrypt('${body.email}', '${this.configService.get('ENCRYPTION_KEY')}')`,
+            emailHash: sha1(body.email).toString(enc.Hex),
+            displayName: null,
+            password: null,
+            agreeTermsPolicy: false,
+          },
+        ])
+        .execute();
+
+      await this.companyUserRepository
+        .createQueryBuilder()
+        .insert()
+        .into(CompanyUserEntity)
+        .values([
+          {
+            status: commonStatus.PENDING,
+            company_uuid: userInfo.company,
+            user_uuid: newUser.raw[0].uuid,
+          },
+        ])
+        .execute();
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.inviteUser.name);
+      throw new Error(error);
     }
   }
 }

@@ -1,9 +1,9 @@
 import { Column, Entity, OneToMany } from 'typeorm';
 import { TemplateEntity } from './template.entity';
 import { CompanyUserEntity } from './company-user.entity';
-import { EStatus } from '../../enum/company';
 import { CategoryEntity } from './category.entity';
 import { GroupEntity } from './group.entity';
+import { EStatus } from '../../enum/common';
 
 @Entity({ name: 'company' })
 export class CompanyEntity extends TemplateEntity {

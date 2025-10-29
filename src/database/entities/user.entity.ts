@@ -3,6 +3,7 @@ import { TemplateEntity } from './template.entity';
 import { EStatus } from '../../enum/user';
 import { UserProvider } from './userProvider.entity';
 import { CompanyUserEntity } from './company-user.entity';
+import { UserGroupEntity } from './user-group.entity';
 
 @Entity({ name: 'users' })
 export class UserEntity extends TemplateEntity {
@@ -17,7 +18,7 @@ export class UserEntity extends TemplateEntity {
   emailHash: string;
 
   @Column({ type: 'varchar', nullable: true })
-  password: string;
+  password: string | null;
 
   @Column({ type: 'boolean' })
   agreeTermsPolicy: boolean;
@@ -30,4 +31,7 @@ export class UserEntity extends TemplateEntity {
 
   @OneToMany(() => CompanyUserEntity, (companyUser) => companyUser.user_uuid)
   companyUser: CompanyUserEntity[];
+
+  @OneToMany(() => UserGroupEntity, (usergroup) => usergroup.user_uuid)
+  groupUser: UserGroupEntity[];
 }

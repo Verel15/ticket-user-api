@@ -1,14 +1,21 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Post, Res, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { SaveAppLog } from '../utils/logger';
 import httpStatus from 'http-status';
 import type { Response } from 'express';
 import { RegisterDto } from './dto/register.dto';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LoginDto } from './dto/login.dto';
 import { CredentialService } from '../credential/credential.service';
+import { AuthGuard } from '../guard/auth.guard';
+import { InviteDto } from './dto/invite.dto';
+import {
+  CurrentUser,
+  type ICurrentUser,
+} from '../current-user/current-user.decorator';
 
 @Controller('/user')
+@ApiBearerAuth()
 @ApiTags('user')
 export class UserController {
   private readonly logger = new SaveAppLog(UserController.name);
@@ -62,6 +69,24 @@ export class UserController {
     } catch (error: any) {
       res.status(httpStatus.INTERNAL_SERVER_ERROR);
       res.json({ success: false, message: error.message });
+    }
+  }
+
+  @UseGuards(AuthGuard)
+  @Post('/invite')
+  async inviteUser(
+    @CurrentUser() user: ICurrentUser,
+    @Body() body: InviteDto,
+    @Res() res: Response,
+  ) {
+    try {
+      await this.userService.inviteUser(body, user);
+      res.status(httpStatus.OK);
+      res.json({ success: true, message: `Invite user completed.` });
+    } catch (error) {
+      this.logger.error(error.message, error.stack, this.inviteUser.name, body);
+      res.status(httpStatus.INTERNAL_SERVER_ERROR);
+      res.json({ success: false, message: `Fail to invite user.` });
     }
   }
 }

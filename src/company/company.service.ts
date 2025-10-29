@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { CreateCompanyDto } from './dto/createCompany.dto';
 import { SaveAppLog } from '../utils/logger';
 import { CompanyUserEntity } from '../database/entities/company-user.entity';
-import { EStatus } from '../enum/company';
+import { EStatus } from '../enum/common';
 
 @Injectable()
 export class CompanyService {

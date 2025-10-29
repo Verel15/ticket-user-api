@@ -1,7 +1,15 @@
-import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  OneToMany,
+} from 'typeorm';
 import { TemplateEntity } from './template.entity';
 import { CompanyEntity } from './company.entity';
 import { EStatus } from '../../enum/common';
+import { UserGroupEntity } from './user-group.entity';
 
 @Entity({ name: 'group' })
 export class GroupEntity extends TemplateEntity {
@@ -18,4 +26,7 @@ export class GroupEntity extends TemplateEntity {
   @JoinColumn({ name: 'company_uuid' })
   @Index(`group_company_idx`)
   company_uuid: string;
+
+  @OneToMany(() => UserGroupEntity, (usergroup) => usergroup.group_uuid)
+  groupUser: UserGroupEntity[];
 }
